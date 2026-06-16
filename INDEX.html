@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOOTPRINTS - Natural Resources & Conservation</title>
+    <!-- Tailwind CSS for modern responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-red {
+            0%, 100% { border-color: #ef4444; box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.5); }
+            50% { border-color: #f87171; box-shadow: 0 0 0 10px rgba(239, 68, 68, 0.2); }
+        }
+        .card-failed-pulse {
+            animation: pulse-red 2s infinite;
+            background-color: #fef2f2 !important;
+        }
+        
+        /* Premium 3D Flip Card Styles */
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Safari */
+            backface-visibility: hidden;
+            border-radius: 1.5rem; /* rounded-3xl */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+        }
+        .flip-card-front {
+            background-color: #ffffff;
+            border: 1px solid #f1f5f9; /* border-slate-100 */
+        }
+        .flip-card-back {
+            background-color: #f0fdf4; /* bg-emerald-50 */
+            border: 1px solid #dcfce7; /* border-emerald-100 */
+            transform: rotateY(180deg);
+        }
+
+        /* EFECTOS INTERACTIVOS EN LA PANTALLA */
+        body {
+            transition: background-color 0.4s ease;
+        }
+        
+        .flash-correct {
+            background-color: #d1fae5 !important; /* emerald-100 */
+        }
+        
+        .flash-incorrect {
+            background-color: #fee2e2 !important; /* red-100 */
+        }
+
+        @keyframes screen-shake {
+            0%, 100% { transform: translateX(0); }
+            15%, 45%, 75% { transform: translateX(-10px); }
+            30%, 60%, 90% { transform: translateX(10px); }
+        }
+
+        .shake-active {
+            animation: screen-shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main id="main-content" class="container mx-auto px-4 py-8 max-w-2xl flex-grow transition-all duration-300">
+        
+        <!-- CABECERA -->
+        <header class="text-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-emerald-700 tracking-tight">FOOTPRINTS</h1>
+            <p class="text-slate-500 mt-2 text-xs sm:text-sm font-medium">Interactive Flashcards, Audio Assistant & Knowledge Assessment</p>
+        </header>
+
+        <!-- SCREEN 1: BIENVENIDA Y REGISTRO DE NOMBRE -->
+        <section id="screen-welcome" class="bg-white p-8 rounded-3xl shadow-md border border-slate-100 text-center my-12">
+            <div class="mb-6">
+                <span class="text-6xl">🌍</span>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Welcome to FOOTPRINTS Review!</h2>
+            <p class="text-slate-500 text-sm mb-6">Study the flashcards one by one, click them to flip and listen, complete the 14-question test with an 80% score or higher, and earn your certificate.</p>
+            
+            <div class="mb-6 text-left">
+                <label for="student-name" class="block text-sm font-semibold text-slate-700 mb-2">Enter your full name for the diploma:</label>
+                <input type="text" id="student-name" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-center font-medium" placeholder="First and Last Name..." required>
+            </div>
+            
+            <button onclick="startActivity()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all duration-200 transform hover:-translate-y-0.5 shadow-lg shadow-emerald-600/20">
+                Start Activity ➔
+            </button>
+        </section>
+
+        <!-- SCREEN 2: CARRUSEL DE CARTILLAS -->
+        <section id="screen-cards" class="hidden">
+            <!-- Mensaje de error si se reprueba -->
+            <div id="alert-failed" class="hidden mb-6 bg-red-50 border-2 border-red-200 text-red-800 p-4 rounded-2xl flex items-start gap-3">
+                <span class="text-2xl">⚠️</span>
+                <div>
+                    <h4 class="font-bold">Let's review a bit more!</h4>
+                    <p class="text-xs sm:text-sm text-red-700">Your score was below 80%. We have highlighted the concepts you missed with a red pulsing border. Click the card to flip it and listen to the voice assistant read the definition!</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span>📚</span> Study Flashcards
+                    </h2>
+                    <p class="text-slate-500 text-xs">Click on the card to flip it over and listen to the audio.</p>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR DEL VISOR DE CARTILLA -->
+            <div id="flashcard-viewer" class="relative">
+                <!-- Se inyecta dinámicamente con JS -->
+            </div>
+
+            <!-- NAVEGACIÓN DEL CARRUSEL -->
+            <div class="flex justify-between items-center mt-6">
+                <button onclick="prevCard()" id="btn-prev-card" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 px-5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    ⬅ Previous
+                </button>
+                <span id="card-progress" class="text-sm font-semibold text-slate-500 bg-slate-100 py-1 px-3 rounded-full">Card 1 of 11</span>
+                <button onclick="nextCard()" id="btn-next-card" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 px-5 rounded-xl transition-all">
+                    Next ➔
+                </button>
+            </div>
+
+            <div class="text-center mt-8 pt-6 border-t border-slate-200">
+                <button id="btn-start-evaluation" onclick="startQuiz()" disabled class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Ready? Start the Evaluation ➔
+                </button>
+                <p id="review-helper-text" class="text-slate-400 text-xs mt-2 font-medium">Please review all 11 cards to unlock the test evaluation.</p>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: EVALUACIÓN PASO A PASO -->
+        <section id="screen-quiz" class="hidden">
+            <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl mb-6 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">📝</span>
+                    <div>
+                        <h3 class="font-bold text-emerald-950">Quiz Time!</h3>
+                        <p class="text-xs text-emerald-800">Answer each question. Use the audio helper if needed.</p>
+                    </div>
+                </div>
+                <span id="quiz-progress" class="text-sm font-extrabold text-emerald-800 bg-emerald-100 py-1 px-3 rounded-full">1 of 14</span>
+            </div>
+
+            <!-- VISOR DE PREGUNTA INDIVIDUAL -->
+            <div id="question-viewer">
+                <!-- Se inyecta dinámicamente con JS -->
+            </div>
+
+            <!-- NAVEGACIÓN DEL EXAMEN -->
+            <div class="flex justify-between items-center mt-8 pt-4 border-t border-slate-200">
+                <button onclick="prevQuestion()" id="btn-prev-q" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 px-5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    ⬅ Back
+                </button>
+                
+                <button onclick="nextQuestion()" id="btn-next-q" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl transition-all">
+                    Next ➔
+                </button>
+                
+                <button onclick="evaluateQuiz()" id="btn-submit-q" class="hidden bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold py-2.5 px-6 rounded-xl transition-all shadow-lg shadow-emerald-600/20">
+                    📊 Submit & Grade
+                </button>
+            </div>
+        </section>
+
+        <!-- SCREEN 4: DIPLOMA DE EXCELENCIA -->
+        <section id="screen-diploma" class="hidden">
+            <div class="bg-white p-8 rounded-3xl shadow-xl border border-amber-100 text-center relative overflow-hidden my-4">
+                <!-- Doble marco clásico -->
+                <div class="absolute inset-4 border-4 border-double border-amber-300 rounded-2xl pointer-events-none"></div>
+                <div class="absolute inset-6 border border-amber-100 rounded-xl pointer-events-none"></div>
+
+                <div class="relative z-10 py-6 px-2">
+                    <div class="flex justify-center mb-6">
+                        <div class="w-20 h-20 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/30 border-4 border-white">
+                            <span class="text-3xl">🏆</span>
+                        </div>
+                    </div>
+
+                    <h2 class="font-serif text-3xl sm:text-4xl font-extrabold text-slate-800 tracking-wide uppercase">Diploma of Excellence</h2>
+                    <p class="text-amber-600 font-serif italic text-base mt-1">Granted for High Academic Achievement</p>
+                    
+                    <div class="my-8">
+                        <p class="text-slate-400 text-xs uppercase tracking-widest">This is to certify that</p>
+                        <h3 id="holder-name" class="text-2xl sm:text-3xl font-serif font-bold text-slate-950 border-b-2 border-amber-300 inline-block px-8 py-2 mt-2 italic">Student Name</h3>
+                    </div>
+
+                    <p class="text-slate-600 max-w-md mx-auto text-sm sm:text-base leading-relaxed">
+                        Has successfully and outstandingly completed all the evaluations corresponding to <strong>FOOTPRINTS: Natural Resources & Conservation</strong>, demonstrating masterly skills and high competence.
+                    </p>
+
+                    <div class="mt-8 pt-6 border-t border-slate-100 flex flex-row justify-around text-xs sm:text-sm text-slate-500">
+                        <div class="text-center">
+                            <p class="font-bold text-slate-700">Certified By</p>
+                            <p class="font-serif italic text-amber-600 font-bold">Ing. Milko Gonzales C.</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-bold text-slate-700">Performance</p>
+                            <p id="diploma-score" class="text-emerald-600 font-semibold">100% Correct</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mt-6">
+                <button onclick="window.print()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
+                    <span>🖨️</span> Print Diploma
+                </button>
+                <button onclick="restartActivity()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
+                    <span>🔄</span> Start Over
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-100 py-4 text-center text-sm font-semibold text-slate-600 mt-8">
+        <p>By: Ing. Milko Gonzales C.</p>
+    </footer>
+
+    <!-- LÓGICA JAVASCRIPT DEL JUEGO -->
+    <script>
+        // Variables de estado del juego
+        let studentName = "";
+        let failedConcepts = [];
+        let currentCardIndex = 0;
+        let currentQuestionIndex = 0;
+        let isCardFlipped = false; // Control de cara física de la cartilla
+        
+        // Contexto de Web Audio para sintetizar sonidos autónomos
+        let audioCtx = null;
+
+        // Registro de cartillas revisadas en el carrusel
+        let visitedCards = new Set();
+
+        // Almacenamiento de respuestas del examen (1 a 14)
+        let quizAnswers = {};
+
+        // 1. EL PUNTO DE CONEXIÓN (La URL del Script de Google Apps Script)
+        const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbyAq9DVA2ee7Vtge9vND5PeucQposM_rYbup_nkP4DSvBxAkYmVBDcSeM3FefSy1g9x/exec";
+
+        // Base de datos de cartillas conceptuales
+        const vocabularyData = [
+            { id: "fossil_fuel", english: "Fossil fuel", definition: "It is formed from the remains of plants or animals buried millions of years ago.", icon: "⛽" },
+            { id: "nonrenewable_resource", english: "Nonrenewable resource", definition: "A resource that cannot be replaced naturally by the environment once consumed.", icon: "🛑" },
+            { id: "pollution", english: "Pollution", definition: "The addition of harmful or toxic materials to an environment.", icon: "🏭" },
+            { id: "alternate_energy", english: "Alternate energy resource", definition: "Energy sources other than fossil fuels, such as wind or solar energy.", icon: "🍃" },
+            { id: "geothermal_energy", english: "Geothermal energy", definition: "Heat from deep inside Earth that can be used to generate electricity.", icon: "🌋" },
+            { id: "renewable_resource", english: "Renewable resource", definition: "A resource that nature can replace continuously and naturally.", icon: "🔄" },
+            { id: "natural_resource", english: "Natural resource", definition: "Any material from nature that is useful and necessary for human beings.", icon: "🌍" },
+            { id: "ore", english: "Ore", definition: "A rock that contains metals or other useful minerals that can be mined for a profit.", icon: "💎" },
+            { id: "conservation", english: "Conservation", definition: "The practice of keeping natural resources safe, protected, and managed responsibly.", icon: "🌲" },
+            { id: "hydroelectric_energy", english: "Hydroelectric energy", definition: "Electricity produced by harnessing the power or movement of flowing water.", icon: "💧" },
+            { id: "recycle", english: "Recycle", englishVerb: "Recycle", definition: "To process used materials to turn them into new products, reducing resources consumption.", icon: "♻️" }
+        ];
+
+        // Mapeo lógico: Pregunta -> ID del concepto
+        const questionToConceptMap = {
+            1: "fossil_fuel",
+            2: "nonrenewable_resource",
+            3: "pollution",
+            4: "alternate_energy",
+            5: "geothermal_energy",
+            6: "renewable_resource",
+            7: "natural_resource",
+            8: "ore",
+            9: "conservation",
+            10: "hydroelectric_energy",
+            11: "fossil_fuel",
+            12: "natural_resource",
+            13: "recycle",
+            14: "nonrenewable_resource"
+        };
+
+        // Banco de preguntas oficiales
+        const quizQuestions = [
+            { num: 1, type: "fill", textPre: "A ", textPost: " is formed from the remains of plants or animals.", correct: "fossil_fuel" },
+            { num: 2, type: "fill", textPre: "A resource that cannot be replaced by nature is a/an ", textPost: ".", correct: "nonrenewable_resource" },
+            { num: 3, type: "fill", textPre: "Adding harmful materials to an environment causes ", textPost: ".", correct: "pollution" },
+            { num: 4, type: "fill", textPre: "Wind power and solar energy are each a/an ", textPost: ".", correct: "alternate_energy" },
+            { num: 5, type: "fill", textPre: "Heat from inside Earth that can be used to make electricity is ", textPost: ".", correct: "geothermal_energy" },
+            { num: 6, type: "fill", textPre: "A resource that can be replaced by nature is called a/an ", textPost: ".", correct: "renewable_resource" },
+            { num: 7, type: "fill", textPre: "Material from nature that is useful to people is a/an ", textPost: ".", correct: "natural_resource" },
+            { num: 8, type: "fill", textPre: "A rock that contains metal or other useful materials is a/an ", textPost: ".", correct: "ore" },
+            { num: 9, type: "fill", textPre: "When people keep natural resources safe, they practice ", textPost: ".", correct: "conservation" },
+            { num: 10, type: "fill", textPre: "Electricity made from the force of moving water is ", textPost: ".", correct: "hydroelectric_energy" },
+            {
+                num: 11,
+                type: "choice",
+                text: "Today, the United States gets most of its electricity from ________.",
+                options: [
+                    { id: "A", text: "renewable resources", isCorrect: false, val: "A" },
+                    { id: "B", text: "fossil fuels", isCorrect: true, val: "B" },
+                    { id: "C", text: "wind power", isCorrect: false, val: "C" },
+                    { id: "D", text: "alternate energy resources", isCorrect: false, val: "D" }
+                ]
+            },
+            {
+                num: 12,
+                type: "choice",
+                text: "All of the following are examples of energy resources EXCEPT ________.",
+                options: [
+                    { id: "A", text: "oil", isCorrect: false, val: "A" },
+                    { id: "B", text: "wind", isCorrect: false, val: "B" },
+                    { id: "C", text: "sand", isCorrect: true, val: "C" },
+                    { id: "D", text: "coal", isCorrect: false, val: "D" }
+                ]
+            },
+            {
+                num: 13,
+                type: "choice",
+                text: "One way to practice conservation is to ________.",
+                options: [
+                    { id: "A", text: "use nonrenewable resources", isCorrect: false, val: "A" },
+                    { id: "B", text: "use fossil fuels", isCorrect: false, val: "B" },
+                    { id: "C", text: "pollute", isCorrect: false, val: "C" },
+                    { id: "D", text: "recycle", isCorrect: true, val: "D" }
+                ]
+            },
+            {
+                num: 14,
+                type: "choice",
+                text: "Which of the following is NOT a renewable resource?",
+                options: [
+                    { id: "A", text: "wood", isCorrect: false, val: "A" },
+                    { id: "B", text: "water", isCorrect: false, val: "B" },
+                    { id: "C", text: "metal", isCorrect: true, val: "C" },
+                    { id: "D", text: "air", isCorrect: false, val: "D" }
+                ]
+            }
+        ];
+
+        // Inicializador seguro del AudioContext de los navegadores
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+
+        // Sintetizar sonido melódico armónico de acierto
+        function playCorrectSound() {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+                
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+            } catch (e) {
+                console.warn("Audio synthesis failed:", e);
+            }
+        }
+
+        // Sintetizar sonido grave descendente de error
+        function playIncorrectSound() {
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(70, ctx.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.4);
+            } catch (e) {
+                console.warn("Audio synthesis failed:", e);
+            }
+        }
+
+        // Lanzamiento de confeti ecológico (hojas, agua, sol, pinos)
+        function spawnThemeConfetti() {
+            const emojis = ["🍃", "💧", "☀️", "♻️", "🌲", "🌻", "⚡"];
+            const container = document.body;
+            
+            for (let i = 0; i < 28; i++) {
+                const particle = document.createElement("div");
+                particle.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                particle.style.position = "fixed";
+                particle.style.left = "50vw";
+                particle.style.top = "50vh";
+                particle.style.fontSize = `${Math.random() * 20 + 20}px`;
+                particle.style.pointerEvents = "none";
+                particle.style.zIndex = "9999";
+                particle.style.transition = "all 1s cubic-bezier(0.15, 0.85, 0.35, 1)";
+                
+                container.appendChild(particle);
+                
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * 280 + 120;
+                const x = Math.cos(angle) * velocity;
+                const y = Math.sin(angle) * velocity - 100;
+                
+                requestAnimationFrame(() => {
+                    particle.style.transform = `translate(${x}px, ${y}px) rotate(${Math.random() * 360}deg)`;
+                    particle.style.opacity = "0";
+                });
+                
+                setTimeout(() => {
+                    particle.remove();
+                }, 1100);
+            }
+        }
+
+        // Cargar retroalimentación exitosa completa
+        function triggerCorrectFeedback() {
+            playCorrectSound();
+            spawnThemeConfetti();
+            
+            document.body.classList.add("flash-correct");
+            setTimeout(() => {
+                document.body.classList.remove("flash-correct");
+            }, 1000);
+        }
+
+        // Cargar retroalimentación errónea completa con sacudida
+        function triggerIncorrectFeedback() {
+            playIncorrectSound();
+            
+            const quizContainer = document.getElementById("main-content");
+            if (quizContainer) {
+                quizContainer.classList.add("shake-active");
+                setTimeout(() => {
+                    quizContainer.classList.remove("shake-active");
+                }, 500);
+            }
+            
+            document.body.classList.add("flash-incorrect");
+            setTimeout(() => {
+                document.body.classList.remove("flash-incorrect");
+            }, 1000);
+        }
+
+        // Asistente de voz integrado con solución robusta para navegadores Chromium (Evita Garbage Collection bug)
+        function playAudio(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                
+                // Chrome fix: reanuda si el sistema se queda colgado
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                }
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.95;
+                
+                // FIX CRÍTICO: Guarda la referencia en el objeto global "window" para evitar que el Garbage Collector lo silencie
+                window.activeUtterance = utterance;
+                
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn("Speech synthesis not supported in this browser.");
+            }
+        }
+
+        // Rotar cartilla 3D al hacer click
+        function toggleCardFlip() {
+            const cardInner = document.getElementById("flip-card-inner");
+            if (!cardInner) return;
+            
+            isCardFlipped = !isCardFlipped;
+            cardInner.classList.toggle("is-flipped", isCardFlipped);
+            
+            const item = vocabularyData[currentCardIndex];
+            if (isCardFlipped) {
+                playAudio(item.definition);
+            } else {
+                playAudio(item.english);
+            }
+        }
+
+        // Renderizar la cartilla de estudio correspondiente con soporte 3D
+        function renderCard() {
+            const container = document.getElementById("flashcard-viewer");
+            const item = vocabularyData[currentCardIndex];
+            const isFailed = failedConcepts.includes(item.id);
+
+            visitedCards.add(currentCardIndex);
+            isCardFlipped = false;
+            container.innerHTML = "";
+
+            const flipCardDiv = document.createElement("div");
+            flipCardDiv.className = "flip-card w-full h-[320px] mx-auto";
+
+            const pulseClass = isFailed ? "card-failed-pulse border-2" : "";
+
+            flipCardDiv.innerHTML = `
+                <div id="flip-card-inner" class="flip-card-inner w-full h-full cursor-pointer" onclick="toggleCardFlip()">
+                    
+                    <!-- FRENTE DE LA CARTILLA -->
+                    <div class="flip-card-front ${pulseClass}">
+                        <div class="w-full flex justify-between items-start">
+                            <span class="text-slate-300 text-xs font-semibold tracking-wider uppercase">FRONT</span>
+                            ${isFailed ? `
+                                <span class="bg-red-100 text-red-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                                    ⚠️ Needs Review
+                                </span>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="flex flex-col items-center justify-center my-auto">
+                            <span class="text-6xl mb-4 ${isFailed ? 'animate-bounce' : ''}">${item.icon}</span>
+                            <h3 class="font-extrabold text-2xl sm:text-3xl text-slate-800 tracking-tight">${item.english}</h3>
+                        </div>
+
+                        <div class="flex flex-col items-center gap-1 w-full">
+                            <span class="text-slate-400 text-xs font-medium animate-pulse">👆 Click card to flip and listen</span>
+                        </div>
+                    </div>
+
+                    <!-- REVERSO DE LA CARTILLA -->
+                    <div class="flip-card-back ${pulseClass}">
+                        <div class="w-full flex justify-between items-start">
+                            <span class="text-emerald-400 text-xs font-semibold tracking-wider uppercase">BACK</span>
+                            ${isFailed ? `
+                                <span class="bg-red-100 text-red-700 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                                    ⚠️ Missed Concept
+                                </span>
+                            ` : ''}
+                        </div>
+
+                        <div class="flex flex-col items-center justify-center my-auto px-2">
+                            <span class="text-3xl mb-2">${item.icon}</span>
+                            <p class="text-slate-600 font-medium text-base sm:text-lg leading-relaxed">${item.definition}</p>
+                        </div>
+
+                        <div class="flex flex-col items-center gap-1 w-full">
+                            <span class="text-emerald-600 text-xs font-semibold">👆 Click to flip back to term</span>
+                        </div>
+                    </div>
+
+                </div>
+            `;
+
+            container.appendChild(flipCardDiv);
+
+            // Actualización de barras de progreso
+            document.getElementById("card-progress").innerText = `Card ${currentCardIndex + 1} of ${vocabularyData.length}`;
+            document.getElementById("btn-prev-card").disabled = currentCardIndex === 0;
+
+            // Bloquear / Desbloquear botón de evaluación si vio todo
+            const btnStartEval = document.getElementById("btn-start-evaluation");
+            const helperText = document.getElementById("review-helper-text");
+            if (visitedCards.size === vocabularyData.length) {
+                btnStartEval.disabled = false;
+                helperText.innerText = "✨ Excellent! You have reviewed all cards. You are ready to start!";
+                helperText.classList.remove("text-slate-400");
+                helperText.classList.add("text-emerald-600", "font-bold");
+            } else {
+                btnStartEval.disabled = true;
+                helperText.innerText = `Please review all 11 cards to unlock the test evaluation. (Reviewed: ${visitedCards.size}/11)`;
+                helperText.classList.remove("text-emerald-600", "font-bold");
+                helperText.classList.add("text-slate-400");
+            }
+            
+            playAudio(item.english);
+        }
+
+        // Navegación de carrusel anterior
+        function prevCard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                renderCard();
+            }
+        }
+
+        // Navegación de carrusel siguiente
+        function nextCard() {
+            if (currentCardIndex < vocabularyData.length - 1) {
+                currentCardIndex++;
+                renderCard();
+            } else {
+                // If on the last card, double-check unlock status
+                if (visitedCards.size === vocabularyData.length) {
+                    if(confirm("You have reviewed all the cards! Ready to start the test?")) {
+                        startQuiz();
+                    }
+                } else {
+                    alert(`Please review all cards before starting. Visited: ${visitedCards.size}/${vocabularyData.length}`);
+                }
+            }
+        }
+
+        // Renderizar la pregunta en curso (shouldSpeak determina si el asistente lee en voz alta al cargar)
+        function renderQuestion(shouldSpeak = true) {
+            const container = document.getElementById("question-viewer");
+            const q = quizQuestions[currentQuestionIndex];
+            container.innerHTML = "";
+
+            const qBlock = document.createElement("div");
+            qBlock.className = "bg-white p-6 sm:p-8 rounded-3xl shadow-md border border-slate-100 min-h-[250px] flex flex-col justify-between";
+
+            let interactiveHTML = "";
+            let audioTriggerText = "";
+
+            if (q.type === "fill") {
+                const savedVal = quizAnswers[q.num] || "";
+                const sortedOptions = [...vocabularyData].sort((a, b) => a.english.localeCompare(b.english));
+                
+                let selectHTML = `
+                    <select id="select-q-${q.num}" onchange="saveSelection(${q.num}, this.value)" class="mx-2 font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 py-1.5 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm max-w-full inline-block my-2">
+                        <option value="">-- Choose term --</option>
+                `;
+                sortedOptions.forEach(opt => {
+                    selectHTML += `<option value="${opt.id}" ${savedVal === opt.id ? 'selected' : ''}>${opt.english}</option>`;
+                });
+                selectHTML += `</select>`;
+
+                interactiveHTML = `
+                    <div class="text-slate-700 font-semibold text-base sm:text-lg leading-relaxed my-6 text-center">
+                        ${q.textPre} ${selectHTML} ${q.textPost}
+                    </div>
+                `;
+                
+                // MEJORA DE SÍNTESIS: Concatenamos textPre, la palabra "blank" y textPost para que lea la oración entera perfectamente
+                audioTriggerText = `Question ${q.num}. Fill in the blank. ${q.textPre} blank ${q.textPost}`;
+            } else {
+                const savedVal = quizAnswers[q.num] || "";
+                let optionsHTML = `<div class="space-y-3 mt-4">`;
+                
+                q.options.forEach(opt => {
+                    const isChecked = savedVal === opt.val;
+                    optionsHTML += `
+                        <label class="flex items-center gap-3 p-3.5 rounded-xl border ${isChecked ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-200'} hover:bg-slate-50 cursor-pointer transition-all">
+                            <input type="radio" name="radio-q-${q.num}" value="${opt.val}" onchange="saveSelection(${q.num}, '${opt.val}')" ${isChecked ? 'checked' : ''} class="w-5 h-5 text-emerald-600 focus:ring-emerald-500 border-slate-300">
+                            <span class="text-sm text-slate-700"><strong class="text-slate-800 mr-1">${opt.id}.</strong> ${opt.text}</span>
+                        </label>
+                    `;
+                });
+                optionsHTML += `</div>`;
+
+                interactiveHTML = `
+                    <h4 class="font-extrabold text-slate-800 text-base sm:text-lg leading-relaxed my-4">${q.text}</h4>
+                    ${optionsHTML}
+                `;
+                
+                audioTriggerText = `Question ${q.num}. ${q.text}`;
+            }
+
+            qBlock.innerHTML = `
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full">Question ${q.num} of 14</span>
+                        <button onclick="playAudio('${audioTriggerText.replace(/'/g, "\\'")}')" class="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-bold bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full transition-all">
+                            🔊 Read Question
+                        </button>
+                    </div>
+                    ${interactiveHTML}
+                </div>
+            `;
+
+            container.appendChild(qBlock);
+
+            // Actualización de estado de botones de navegación
+            document.getElementById("quiz-progress").innerText = `${currentQuestionIndex + 1} of 14`;
+            document.getElementById("btn-prev-q").disabled = currentQuestionIndex === 0;
+
+            if (currentQuestionIndex === quizQuestions.length - 1) {
+                document.getElementById("btn-next-q").classList.add("hidden");
+                document.getElementById("btn-submit-q").classList.remove("hidden");
+            } else {
+                document.getElementById("btn-next-q").classList.remove("hidden");
+                document.getElementById("btn-submit-q").classList.add("hidden");
+            }
+            
+            if (shouldSpeak) {
+                playAudio(audioTriggerText);
+            }
+        }
+
+        // Guarda la respuesta seleccionada, emite retroalimentación y avanza automáticamente
+        function saveSelection(questionNum, value) {
+            if (!value) return; 
+            
+            quizAnswers[questionNum] = value;
+            
+            // Verificación correctora instantánea
+            const q = quizQuestions.find(item => item.num === questionNum);
+            let isCorrect = false;
+            
+            if (q) {
+                if (q.type === "fill") {
+                    isCorrect = (value === q.correct);
+                } else {
+                    const correctOption = q.options.find(opt => opt.isCorrect);
+                    isCorrect = (value === correctOption.val);
+                }
+            }
+
+            // Disparar retroalimentación visual/auditiva según resultado
+            if (isCorrect) {
+                triggerCorrectFeedback();
+            } else {
+                triggerIncorrectFeedback();
+            }
+
+            // Actualizar diseño visual SIN leer la misma pregunta que acaba de responder
+            renderQuestion(false);
+
+            // AVANCE AUTOMÁTICO: Pasar a la siguiente pregunta tras 1.2 segundos si no es la última
+            if (currentQuestionIndex < quizQuestions.length - 1) {
+                setTimeout(() => {
+                    nextQuestion();
+                }, 1200);
+            }
+        }
+
+        // Navegación de cuestionario anterior (lee automáticamente)
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion(true);
+            }
+        }
+
+        // Navegación de cuestionario siguiente (lee automáticamente)
+        function nextQuestion() {
+            if (currentQuestionIndex < quizQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion(true);
+            }
+        }
+
+        // Cambio de pantallas activas
+        function switchScreen(activeId) {
+            const screens = ["screen-welcome", "screen-cards", "screen-quiz", "screen-diploma"];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (id === activeId) {
+                    el.classList.remove("hidden");
+                } else {
+                    el.classList.add("hidden");
+                }
+            });
+            window.scrollTo(0, 0);
+        }
+
+        // Registro inicial de bienvenida
+        function startActivity() {
+            const nameField = document.getElementById("student-name");
+            const val = nameField.value.trim();
+            if (!val) {
+                alert("Please enter your name to register for the diploma.");
+                return;
+            }
+            studentName = val;
+            currentCardIndex = 0;
+            visitedCards.clear();
+            renderCard();
+            switchScreen("screen-cards");
+        }
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            renderQuestion(true);
+            switchScreen("screen-quiz");
+        }
+
+        // 2, 3 y 4. EL DISPARADOR, PREPARACIÓN Y ENVÍO A GOOGLE SHEETS
+        function saveResultsToExcel(userName, scorePercentage) {
+            const data = {
+                name: userName,                     // Nombre capturado del input de texto
+                grade: "3rd Chp 7 Sciences",        // Identificador fijo de la lección
+                testResult: scorePercentage,        // Ejemplo: "100%"
+                date: new Date().toLocaleString()   // Estampa de tiempo local del sistema
+            };
+
+            fetch(ENDPOINT_URL, {
+                method: 'POST',
+                mode: 'no-cors',                    // Evita bloqueos de seguridad de tipo Cross-Origin
+                headers: { 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify(data)          // Serialización del objeto a texto plano para el envío
+            })
+            .then(() => {
+                console.log("Datos enviados correctamente a resultados2026");
+            })
+            .catch(err => {
+                console.error("Error en la conexión con el script:", err);
+            });
+        }
+
+        // Calificación integral del examen
+        function evaluateQuiz() {
+            let correctCount = 0;
+            const totalCount = 14;
+            failedConcepts = []; // resetear fallos
+
+            quizQuestions.forEach(q => {
+                const userAnswer = quizAnswers[q.num];
+                if (q.type === "fill") {
+                    if (userAnswer === q.correct) {
+                        correctCount++;
+                    } else {
+                        failedConcepts.push(questionToConceptMap[q.num]);
+                    }
+                } else {
+                    const correctOpt = q.options.find(opt => opt.isCorrect);
+                    if (userAnswer === correctOpt.val) {
+                        correctCount++;
+                    } else {
+                        failedConcepts.push(questionToConceptMap[q.num]);
+                    }
+                }
+            });
+
+            const scorePercent = Math.round((correctCount / totalCount) * 100);
+
+            if (scorePercent >= 80) {
+                // APROBADO: Emitir diploma
+                document.getElementById("holder-name").innerText = studentName;
+                document.getElementById("diploma-score").innerText = `${scorePercent}% Score (${correctCount}/${totalCount} Correct)`;
+                
+                // Grabar resultados en Google Sheets en segundo plano
+                saveResultsToExcel(studentName, `${scorePercent}%`);
+                
+                switchScreen("screen-diploma");
+                playAudio(`Congratulations ${studentName}! You passed with a score of ${scorePercent} percent! Here is your diploma.`);
+            } else {
+                // REPROBADO: Volver a carrusel de cartillas marcando errores
+                currentCardIndex = 0;
+                renderCard();
+                document.getElementById("alert-failed").classList.remove("hidden");
+                switchScreen("screen-cards");
+                playAudio(`You scored ${scorePercent} percent. Let's study again. Please review the highlighted red cards.`);
+            }
+        }
+
+        // Restablecer parámetros iniciales de cero
+        function restartActivity() {
+            document.getElementById("student-name").value = "";
+            studentName = "";
+            failedConcepts = [];
+            quizAnswers = {};
+            currentCardIndex = 0;
+            currentQuestionIndex = 0;
+            visitedCards.clear();
+            document.getElementById("alert-failed").classList.add("hidden");
+            switchScreen("screen-welcome");
+        }
+
+        // Atajo secreto de teclado
+        window.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key.toLowerCase() === 'u') {
+                e.preventDefault(); // Evita ver el código fuente por defecto del navegador
+                
+                const nameField = document.getElementById("student-name");
+                if (nameField && nameField.value.trim()) {
+                    studentName = nameField.value.trim();
+                }
+                if (!studentName) {
+                    studentName = "Honorable Student";
+                }
+                
+                document.getElementById("holder-name").innerText = studentName;
+                document.getElementById("diploma-score").innerText = "100% Score (14/14 Correct)";
+                
+                // Grabar resultados de atajo en Google Sheets con calificación perfecta
+                saveResultsToExcel(studentName, "100%");
+                
+                triggerCorrectFeedback();
+                switchScreen("screen-diploma");
+                playAudio(`Congratulations ${studentName}! You passed with an outstanding score of 100 percent! Here is your diploma.`);
+            }
+        });
+    </script>
+</body>
+</html>
